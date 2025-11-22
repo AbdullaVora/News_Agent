@@ -370,7 +370,7 @@ class EnhancedNewsFetcher:
 # ============================================
 
 if __name__ == "__main__":
-    from config import Config
+    from backend.config import Config
     
     # Initialize enhanced fetcher
     fetcher = EnhancedNewsFetcher(Config.GOOGLE_AI_STUDIO_KEY)

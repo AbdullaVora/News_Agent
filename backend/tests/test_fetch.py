@@ -2,7 +2,7 @@
 Enhanced Test Script - Shows full URLs and comprehensive summaries
 """
 
-from enhanced_fetch import EnhancedNewsFetcher
+from services.enhanced_fetch import EnhancedNewsFetcher
 from config import Config
 import sys
 

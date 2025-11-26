@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+
 node_modules
 dist
 dist-ssr
@@ -22,3 +23,22 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build files
+build/
+dist/
+out/
+.next/
+*.bundle.js
+*.min.js
+*.min.css
+
+# TypeScript cache
+tsconfig.tsbuildinfo
+bun.lockb
+pnpm-lock.yaml
+
+# Build artifacts and worktree directories (managed by preview API)
+.threads
+.threads/
+.last_install_check

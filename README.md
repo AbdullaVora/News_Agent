@@ -99,7 +99,7 @@ A sophisticated news aggregation platform powered by **6 specialized AI agents**
 ```bash
 # Clone repository
 git clone <your-repo-url>
-cd News_Ai_Agent
+cd News_Agent
 
 # Create virtual environment
 python -m venv venv
@@ -128,7 +128,7 @@ GOOGLE_API_KEY=your_google_ai_studio_key_here
 #### **Option A: Command Line Interface (Recommended for testing)**
 
 ```bash
-# From News_Ai_Agent directory
+# From News_Agent directory
 python run_cli.py
 ```
 
@@ -154,7 +154,7 @@ python run_gui.py
 ## 📁 Project Structure
 
 ```
-News_Ai_Agent/
+News_Agent/
 ├── backend/
 │   ├── agents/                   # Specialized AI agents
 │   │   ├── base_agent.py         # Base agent class
@@ -656,10 +656,10 @@ This project is perfect for learning:
 
 ## 📊 Stats
 
-![GitHub stars](https://img.shields.io/github/stars/AbdullaVora/News_Ai_Agent?style=social)
-![GitHub forks](https://img.shields.io/github/forks/AbdullaVora/News_Ai_Agent?style=social)
-![GitHub issues](https://img.shields.io/github/issues/AbdullaVora/News_Ai_Agent)
-![GitHub license](https://img.shields.io/github/license/AbdullaVora/News_Ai_Agent)
+![GitHub stars](https://img.shields.io/github/stars/AbdullaVora/News_Agent?style=social)
+![GitHub forks](https://img.shields.io/github/forks/AbdullaVora/News_Agent?style=social)
+![GitHub issues](https://img.shields.io/github/issues/AbdullaVora/News_Agent)
+![GitHub license](https://img.shields.io/github/license/AbdullaVora/News_Agent)
 
 ---
 
@@ -669,6 +669,6 @@ This project is perfect for learning:
 
 ⭐ **Star this repo if you found it helpful!** ⭐
 
-[Report Bug](https://github.com/AbdullaVora/News_Ai_Agent/issues) · [Request Feature](https://github.com/AbdullaVora/News_Ai_Agent/issues)
+[Report Bug](https://github.com/AbdullaVora/News_Agent/issues) · [Request Feature](https://github.com/AbdullaVora/News_Agent/issues)
 
 </div>

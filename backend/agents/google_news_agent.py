@@ -246,7 +246,7 @@ class GoogleNewsAgent(BaseAgent):
             kwargs: max_results (default 10), extract_images (default True)
             
         Returns:
-            List of article dicts
+            List of article dicts with images
         """
         # Health check
         if kwargs.get('health_check'):
@@ -258,6 +258,7 @@ class GoogleNewsAgent(BaseAgent):
         search_term = data.get('search_term')
         location = data.get('location')
         max_results = kwargs.get('max_results', 10)
+        extract_images = kwargs.get('extract_images', True)
         
         if not search_term:
             raise ValueError("search_term is required")

@@ -40,6 +40,12 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Run agent in GUI
+python run_gui.py
+
+# Run agent in terminal
+python run_cli.py
 ```
 
 ### Step 3: Configure API Key
@@ -55,32 +61,6 @@ GOOGLE_API_KEY=your_google_ai_studio_key_here
 ```bash
 python fetch_news.py
 ```
-
----
-
-## 📖 How It Works
-
-### Example 1: Simple Query
-```python
-from fetch_news import IntelligentNewsFetcher
-
-fetcher = IntelligentNewsFetcher("YOUR_API_KEY")
-results = fetcher.fetch_news("Latest AI news")
-
-for article in results[:5]:
-    print(article['title'])
-```
-
-### Example 2: Location-Based Query
-```python
-results = fetcher.fetch_news("Technology news from India")
-```
-
-### Example 3: Category Query
-```python
-results = fetcher.fetch_news("Cricket scores today")
-```
-
 ---
 
 ## 🎯 What Makes This Intelligent?
@@ -91,8 +71,8 @@ results = fetcher.fetch_news("Cricket scores today")
    - "Cricket news today"
 
 2. **Multi-Source Fetching**: Pulls from:
-   - Google News RSS (location-specific)
-   - BBC RSS Feeds
+   - Google News (location-specific)
+   - BBC Feeds
    - Reuters
    - Al Jazeera
    - And more...
@@ -112,7 +92,7 @@ This project includes **3+ key concepts**:
 
 ✅ **Tools**:
 - Google AI Studio (built-in LLM)
-- Custom RSS fetcher tool
+- Custom fetcher tool
 - Web scraping tool
 
 ✅ **Agent powered by LLM**:
@@ -122,17 +102,17 @@ This project includes **3+ key concepts**:
 
 ---
 
-## 🔧 Technical Architecture
+## Technical Architecture
 
 ```
 User Query → AI Intent Parser → Multi-Source Fetcher → AI Ranker → Results
 ```
 
 ### Data Sources (All FREE):
-- ✅ Google News RSS
-- ✅ BBC RSS Feeds
-- ✅ Reuters RSS
-- ✅ Al Jazeera RSS
+- ✅ Google News
+- ✅ BBC Feeds
+- ✅ Reuters
+- ✅ Al Jazeera
 - ✅ More can be added easily
 
 ### NO API Keys Needed For:
@@ -162,44 +142,6 @@ smart_news_ai/
 ├── agent.py              # STEP 6 (Next)
 └── main.py               # STEP 7 (Next)
 ```
-
----
-
-## 🎓 Next Steps
-
-### ✅ STEP 1 COMPLETED: Intelligent News Fetching
-
-### 🔜 STEP 2: Clean Text
-- Remove HTML tags
-- Normalize text
-- Prepare for AI processing
-
-### 🔜 STEP 3: Summarize with AI
-- Use Google AI Studio
-- Generate concise summaries
-- Extract key points
-
-### 🔜 STEP 4: Categorize Articles
-- AI-powered classification
-- Multiple categories
-- Confidence scores
-
-### 🔜 STEP 5: Database Storage
-- SQLite database
-- Store articles
-- Query interface
-
-### 🔜 STEP 6: Complete Agent
-- Full pipeline
-- Error handling
-- Optimization
-
-### 🔜 STEP 7: Web Dashboard (Optional)
-- Flask web interface
-- Interactive UI
-- Real-time updates
-
----
 
 ## 💡 Example Queries You Can Try
 
@@ -261,7 +203,3 @@ smart_news_ai/
 MIT License - Free for personal and educational use
 
 ---
-
-**Built for Kaggle Capstone Project** 🎓
-
-Ready to move to STEP 2? Let me know! 🚀

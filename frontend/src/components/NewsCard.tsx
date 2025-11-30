@@ -81,7 +81,8 @@ interface NewsArticle {
   description: string;
   source: string;
   publishedAt: Date;
-  imageUrl: string;
+  imageUrl?: string;
+  generated_image?: string;
   url: string;
 }
 
@@ -125,7 +126,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
       <div className="aspect-video relative overflow-hidden bg-muted">
         {!imageError ? (
           <img
-            src={article.imageUrl}
+            src={article.imageUrl || article.generated_image}
             alt={article.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImageError(true)}

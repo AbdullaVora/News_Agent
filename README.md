@@ -99,7 +99,7 @@ A sophisticated news aggregation platform powered by **6 specialized AI agents**
 ```bash
 # Clone repository
 git clone <your-repo-url>
-cd AI
+cd News_Ai_Agent
 
 # Create virtual environment
 python -m venv venv
@@ -128,7 +128,7 @@ GOOGLE_API_KEY=your_google_ai_studio_key_here
 #### **Option A: Command Line Interface (Recommended for testing)**
 
 ```bash
-# From AI directory
+# From News_Ai_Agent directory
 python run_cli.py
 ```
 
@@ -154,7 +154,7 @@ python run_gui.py
 ## 📁 Project Structure
 
 ```
-AI/
+News_Ai_Agent/
 ├── backend/
 │   ├── agents/                   # Specialized AI agents
 │   │   ├── base_agent.py         # Base agent class

@@ -11,7 +11,7 @@ import threading
 from typing import List, Dict, Any
 import google.generativeai as genai
 
-from base_agent import BaseAgent
+from .base_agent import BaseAgent
 
 
 class LoadingSpinner:

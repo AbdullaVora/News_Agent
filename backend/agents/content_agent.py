@@ -9,7 +9,7 @@ from newspaper import Article
 import sys
 import threading
 
-from base_agent import BaseAgent
+from .base_agent import BaseAgent
 
 
 class LoadingSpinner:

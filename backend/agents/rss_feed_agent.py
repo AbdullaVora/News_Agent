@@ -193,7 +193,7 @@ import threading
 from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
 
-from base_agent import BaseAgent
+from .base_agent import BaseAgent
 
 
 class LoadingSpinner:

@@ -4,7 +4,6 @@ import os
 backend_path = os.path.join(os.getcwd(), "backend")
 python_path = os.path.join(backend_path, "venv", "Scripts", "python.exe")
 
-print("Starting CLI (main.py) using venv Python:", python_path)
-subprocess.Popen([python_path, "main.py"], cwd=backend_path)
+cmd = f'start cmd.exe /k "{python_path} main.py"'
 
-print("CLI started!")
+subprocess.Popen(cmd, cwd=backend_path, shell=True)

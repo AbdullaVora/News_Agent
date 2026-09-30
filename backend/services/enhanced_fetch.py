@@ -1,0 +1,416 @@
+import feedparser
+import requests
+from datetime import datetime
+import time
+from typing import List, Dict, Optional
+import google.generativeai as genai
+from urllib.parse import quote_plus
+import re
+from newspaper import Article
+import json
+from bs4 import BeautifulSoup
+import sys
+import threading
+
+
+class LoadingSpinner:
+    """Terminal loading spinner"""
+    
+    def __init__(self, message: str = "Loading"):
+        self.message = message
+        self.is_running = False
+        self.thread = None
+        self.spinners = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        self.current = 0
+    
+    def _spin(self):
+        """Spinner animation loop"""
+        while self.is_running:
+            sys.stdout.write(f'\r{self.spinners[self.current]} {self.message}...')
+            sys.stdout.flush()
+            self.current = (self.current + 1) % len(self.spinners)
+            time.sleep(0.1)
+        
+        # Clear the line when done
+        sys.stdout.write('\r' + ' ' * (len(self.message) + 5) + '\r')
+        sys.stdout.flush()
+    
+    def start(self):
+        """Start spinner"""
+        self.is_running = True
+        self.thread = threading.Thread(target=self._spin, daemon=True)
+        self.thread.start()
+    
+    def stop(self):
+        """Stop spinner"""
+        self.is_running = False
+        if self.thread:
+            self.thread.join()
+
+
+class EnhancedNewsFetcher:
+    """
+    Enhanced news fetcher with loading animations
+    """
+    
+    def __init__(self, google_ai_studio_key: str, show_loading: bool = True):
+        """Initialize with optional loading indicators"""
+        self.show_loading = show_loading
+        
+        if self.show_loading:
+            print("🔧 Initializing AI model...")
+        
+        genai.configure(api_key=google_ai_studio_key)
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
+        
+        self.rss_sources = {
+            'google_news': 'https://news.google.com/rss',
+            'bbc_world': 'http://feeds.bbci.co.uk/news/world/rss.xml',
+            'bbc_tech': 'http://feeds.bbci.co.uk/news/technology/rss.xml',
+            'bbc_business': 'http://feeds.bbci.co.uk/news/business/rss.xml',
+            'bbc_science': 'http://feeds.bbci.co.uk/news/science_and_environment/rss.xml',
+            'reuters_world': 'https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best',
+            'al_jazeera': 'https://www.aljazeera.com/xml/rss/all.xml',
+            'techcrunch': 'https://techcrunch.com/feed/',
+            'the_verge': 'https://www.theverge.com/rss/index.xml',
+            'ars_technica': 'https://feeds.arstechnica.com/arstechnica/index',
+        }
+        
+        if self.show_loading:
+            print("✅ Ready!\n")
+    
+    def _show_progress(self, message: str):
+        """Show progress message"""
+        if self.show_loading:
+            print(f"  ├─ {message}")
+    
+    def resolve_google_news_url(self, google_url: str) -> str:
+        """Resolve Google News redirect URL"""
+        try:
+            response = requests.get(google_url, allow_redirects=True, timeout=5)
+            actual_url = response.url
+            if 'news.google.com' not in actual_url:
+                return actual_url
+            return google_url
+        except:
+            return google_url
+    
+    def extract_full_article(self, url: str) -> Dict[str, any]:
+        """Extract full article content"""
+        try:
+            article = Article(url)
+            article.download()
+            article.parse()
+            return {
+                'full_text': article.text,
+                'authors': article.authors,
+                'publish_date': str(article.publish_date) if article.publish_date else '',
+                'top_image': article.top_image,
+            }
+        except:
+            return {
+                'full_text': '',
+                'authors': [],
+                'publish_date': '',
+                'top_image': ''
+            }
+    
+    def generate_comprehensive_summary(self, article_text: str, title: str) -> str:
+        """Generate AI summary"""
+        if not article_text or len(article_text) < 100:
+            return "Summary not available - could not extract article content."
+        
+        prompt = f"""
+Generate a comprehensive 4-5 sentence summary of this news article:
+
+Title: {title}
+
+Article: {article_text[:3000]}
+
+Summary should:
+- Cover all key points
+- Be clear and informative
+- Include important details, names, and numbers
+- Be written in a professional news style
+"""
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text.strip()
+        except:
+            sentences = article_text.split('. ')[:3]
+            return '. '.join(sentences) + '.'
+    
+    def parse_user_query(self, user_query: str) -> Dict:
+        """Parse user intent with loading"""
+        if self.show_loading:
+            spinner = LoadingSpinner("🧠 Understanding your query")
+            spinner.start()
+        
+        prompt = f"""
+Analyze this news search query and extract structured information:
+
+Query: "{user_query}"
+
+Return ONLY a JSON object with these fields:
+{{
+    "keywords": ["list", "of", "keywords"],
+    "location": "country/state/city or null",
+    "category": "technology/sports/politics/business/health/entertainment or general",
+    "timeframe": "latest/today/recent or null",
+    "search_term": "optimized search term for news search"
+}}
+"""
+        try:
+            response = self.model.generate_content(prompt)
+            result_text = response.text.strip()
+            result_text = re.sub(r'```json\s*|\s*```', '', result_text)
+            parsed_intent = json.loads(result_text)
+            
+            if self.show_loading:
+                spinner.stop()
+            
+            return parsed_intent
+        except:
+            if self.show_loading:
+                spinner.stop()
+            
+            return {
+                "keywords": user_query.split(),
+                "location": None,
+                "category": "general",
+                "search_term": user_query
+            }
+    
+    def fetch_google_news_rss(self, search_term: str, location: Optional[str] = None) -> List[Dict]:
+        """Fetch from Google News with loading"""
+        if self.show_loading:
+            spinner = LoadingSpinner("🌐 Searching news sources")
+            spinner.start()
+        
+        articles = []
+        try:
+            if location:
+                base_url = f"https://news.google.com/rss/search?q={quote_plus(search_term)}+{quote_plus(location)}&hl=en-IN&gl=IN&ceid=IN:en"
+            else:
+                base_url = f"https://news.google.com/rss/search?q={quote_plus(search_term)}&hl=en-IN&gl=IN&ceid=IN:en"
+            
+            feed = feedparser.parse(base_url)
+            
+            for entry in feed.entries[:10]:
+                raw_title = entry.get('title', '')
+                clean_title = BeautifulSoup(raw_title, 'html.parser').get_text()
+                
+                google_url = entry.get('link', '')
+                actual_url = self.resolve_google_news_url(google_url)
+                
+                source = 'Unknown'
+                if ' - ' in clean_title:
+                    parts = clean_title.rsplit(' - ', 1)
+                    clean_title = parts[0].strip()
+                    source = parts[1].strip()
+                
+                if source == 'Unknown':
+                    source = entry.get('source', {}).get('title', 'Unknown')
+                
+                article = {
+                    'title': clean_title,
+                    'description': BeautifulSoup(entry.get('summary', ''), 'html.parser').get_text(),
+                    'url': actual_url,
+                    'published': entry.get('published', ''),
+                    'source': source,
+                    'fetch_method': 'google_news'
+                }
+                articles.append(article)
+                time.sleep(0.3)
+            
+            if self.show_loading:
+                spinner.stop()
+        
+        except Exception as e:
+            if self.show_loading:
+                spinner.stop()
+        
+        return articles
+    
+    def fetch_all_rss_feeds(self, category: str, keywords: List[str]) -> List[Dict]:
+        """Fetch from RSS sources with loading"""
+        if self.show_loading:
+            spinner = LoadingSpinner("📡 Gathering latest articles")
+            spinner.start()
+        
+        articles = []
+        feed_mapping = {
+            'technology': ['bbc_tech', 'techcrunch', 'the_verge', 'ars_technica'],
+            'business': ['bbc_business', 'reuters_world'],
+            'science': ['bbc_science'],
+            'general': ['bbc_world', 'al_jazeera', 'reuters_world'],
+            'world': ['bbc_world', 'al_jazeera', 'reuters_world'],
+        }
+        
+        feeds_to_check = feed_mapping.get(category, ['bbc_world', 'al_jazeera'])
+        if category != 'general':
+            feeds_to_check.extend(['bbc_world', 'al_jazeera'])
+        feeds_to_check = list(set(feeds_to_check))
+        
+        for feed_name in feeds_to_check:
+            if feed_name not in self.rss_sources:
+                continue
+            
+            try:
+                feed_url = self.rss_sources[feed_name]
+                feed = feedparser.parse(feed_url)
+                
+                for entry in feed.entries[:8]:
+                    article = {
+                        'title': entry.get('title', ''),
+                        'description': entry.get('summary', entry.get('description', '')),
+                        'url': entry.get('link', ''),
+                        'published': entry.get('published', ''),
+                        'source': feed_name.replace('_', ' ').title(),
+                        'fetch_method': 'rss_direct'
+                    }
+                    articles.append(article)
+                
+                time.sleep(0.5)
+            except:
+                continue
+        
+        if self.show_loading:
+            spinner.stop()
+        
+        return articles
+    
+    def enrich_articles(self, articles: List[Dict], max_to_enrich: int = 10) -> List[Dict]:
+        """Extract full content and generate summaries with loading"""
+        if self.show_loading:
+            print(f"\n🤖 Generating AI summaries for top {max_to_enrich} articles...")
+        
+        enriched = []
+        for i, article in enumerate(articles[:max_to_enrich], 1):
+            if self.show_loading:
+                spinner = LoadingSpinner(f"Processing article {i}/{max_to_enrich}")
+                spinner.start()
+            
+            try:
+                full_content = self.extract_full_article(article['url'])
+                
+                if full_content['full_text']:
+                    summary = self.generate_comprehensive_summary(
+                        full_content['full_text'],
+                        article['title']
+                    )
+                else:
+                    summary = article['description']
+                
+                article['full_summary'] = summary
+                article['full_text'] = full_content['full_text'][:500]
+                article['authors'] = full_content['authors']
+                enriched.append(article)
+                
+                if self.show_loading:
+                    spinner.stop()
+                    self._show_progress(f"✓ Article {i} processed")
+                
+                time.sleep(1)
+            except:
+                article['full_summary'] = article['description']
+                enriched.append(article)
+                
+                if self.show_loading:
+                    spinner.stop()
+                    self._show_progress(f"⚠️ Article {i} - using fallback summary")
+        
+        return enriched
+    
+    def rank_articles_with_ai(self, articles: List[Dict], user_query: str) -> List[Dict]:
+        """Rank articles by relevance with loading"""
+        if not articles:
+            return []
+        
+        if self.show_loading:
+            spinner = LoadingSpinner("⚖️ Ranking articles by relevance")
+            spinner.start()
+        
+        article_summaries = []
+        for i, art in enumerate(articles[:30]):
+            article_summaries.append(
+                f"{i+1}. {art['title']} - {art['description'][:100]}"
+            )
+        
+        prompt = f"""
+User query: "{user_query}"
+
+Rank these articles by relevance (most to least relevant).
+Return ONLY a JSON array of article numbers: [5, 2, 8, 1, ...]
+Include top 15 most relevant articles.
+
+Articles:
+{chr(10).join(article_summaries)}
+"""
+        try:
+            response = self.model.generate_content(prompt)
+            result_text = response.text.strip()
+            result_text = re.sub(r'```json\s*|\s*```', '', result_text)
+            ranked_indices = json.loads(result_text)
+            
+            ranked_articles = []
+            for idx in ranked_indices:
+                if 0 < idx <= len(articles):
+                    ranked_articles.append(articles[idx-1])
+            
+            if self.show_loading:
+                spinner.stop()
+                self._show_progress(f"Ranked {len(ranked_articles)} articles")
+            
+            return ranked_articles
+        except:
+            if self.show_loading:
+                spinner.stop()
+            
+            return articles
+    
+    def fetch_news(self, user_query: str, max_results: int = 10, enrich: bool = True) -> List[Dict]:
+        """
+        Main method: Comprehensive news fetching with loading animations
+        """
+        if self.show_loading:
+            print(f"\n{'='*70}")
+            print(f"🔍 Searching for: {user_query}")
+            print(f"{'='*70}\n")
+        
+        # Parse intent
+        intent = self.parse_user_query(user_query)
+        
+        # Fetch from Google News
+        google_articles = self.fetch_google_news_rss(
+            search_term=intent['search_term'],
+            location=intent.get('location')
+        )
+        
+        # Fetch from RSS sources
+        rss_articles = self.fetch_all_rss_feeds(
+            category=intent['category'],
+            keywords=intent['keywords']
+        )
+        
+        # Combine
+        all_articles = google_articles + rss_articles
+        
+        if self.show_loading:
+            print(f"\n  └─ Total articles found: {len(all_articles)}\n")
+        
+        # Rank by relevance
+        ranked_articles = self.rank_articles_with_ai(all_articles, user_query)
+        
+        # Enrich if requested
+        if enrich and ranked_articles:
+            final_results = self.enrich_articles(ranked_articles[:max_results])
+        else:
+            final_results = ranked_articles[:max_results]
+        
+        if self.show_loading:
+            print(f"\n{'='*70}")
+            print(f"✅ Completed! Returning {len(final_results)} articles")
+            print(f"{'='*70}\n")
+        
+        return final_results
